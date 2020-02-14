@@ -1,0 +1,71 @@
+div.bar-server {
+	width: 100%;
+	margin: 0 auto;
+	padding: 10px 0;
+	text-align: center;
+}
+
+div.bar-assets {
+	width: 100%;
+	margin: 0 auto;
+	padding: 10px;
+	text-align: center;
+}
+
+div.server, div.asset {
+	border: 1px;
+	display: inline-block;
+	border-style: solid;
+	background-color: whitesmoke;
+	width: max-content;
+	padding: 10px;
+	margin: 0 10px;
+	text-align: left;
+}
+
+div.server-label, div.asset-label {
+	color: blue;
+	text-align: center;
+	font-size: 28pt;
+}
+
+div.server-label-failure {
+	color: red;
+}
+
+div.server-label-connected {
+	color: green;
+}
+
+div.server-status {
+}
+
+.server-status-label {
+	border: 1px;
+}
+
+.server-status-value {
+	border: 1px;
+}
+
+.asset-position-warn, .asset-battery-time-warn, .asset-search-time-warn {
+	color: orange;
+	font-style: italic;
+	opacity 75%;
+}
+
+.asset-position-old, .asset-battery-time-old, .asset-search-time-old {
+	color: red;
+	font-style: italic;
+	opacity: 25%;
+}
+
+.asset-battery-warn {
+	background-color: orange;
+	font-weight: bold;
+}
+
+.asset-battery-critical {
+	background-color: red;
+	font-weight: bold;
+}
