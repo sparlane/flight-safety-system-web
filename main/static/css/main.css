@@ -48,13 +48,13 @@ div.server-status {
 	border: 1px;
 }
 
-.asset-position-warn, .asset-battery-time-warn, .asset-search-time-warn {
+.asset-position-warn, .asset-battery-time-warn, .asset-search-time-warn, .asset-rtt-time-warn {
 	color: orange;
 	font-style: italic;
 	opacity 75%;
 }
 
-.asset-position-old, .asset-battery-time-old, .asset-search-time-old {
+.asset-position-old, .asset-battery-time-old, .asset-search-time-old, .asset-rtt-time-old {
 	color: red;
 	font-style: italic;
 	opacity: 25%;

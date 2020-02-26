@@ -13,6 +13,9 @@ const battery_time_old = 120 * 1000;
 const search_time_warn = 300 * 1000;
 const search_time_old = 600 * 1000;
 
+const rtt_time_warn = 10 * 1000;
+const rtt_time_old = 60 * 1000;
+
 function deg_to_dm(degs, lat)
 {
     var dir = '';
@@ -101,6 +104,10 @@ assetServerAddIfNew = function(name, server, server_asset_id)
             asset.servers.push({server: server, pk: server_asset_id, id_prefix: id_prefix});
             html = '<div class="asset-status-server" id="' + id_prefix + '">';
             html += '<div class="asset-status-server-label">' + server.name + '</div>';
+            html += '<table class="asset-rtt-status" id="' + id_prefix + '_rtt">';
+            html += "<tr><td>RTT (ms)</td><td>min</td><td>max</td><td>avg</td></tr>";
+            html += '<tr><td class="asset-rtt" id="' + id_prefix + '_rtt_value"></td><td class="asset-rtt" id="' + id_prefix + '_rtt_min"></td><td class="asset-rtt" id="' + id_prefix + '_rtt_max"></td><td class="asset-rtt" id="' + id_prefix + '_rtt_avg"></td></tr>';
+            html += '</table>';
             html += '<div class="asset-position" id="' + id_prefix + '_position">Waiting for position ...</div>';
             html += '<table class="asset-battery-status" id="' + id_prefix + '_battery">';
             html += '<tr><td>Remaining %</td><td>Used (mAh)</td></tr>';
@@ -163,6 +170,14 @@ assetServerPopulateStatus = function(asset, server_entry, data)
         $("#" + server_entry.id_prefix + "_search_current").html(data['search']['progress']);
         $("#" + server_entry.id_prefix + "_search_total").html(data['search']['total']);
         fieldMarkOld("#" + server_entry.id_prefix + "_search", data.search.timestamp, search_time_old, search_time_warn, "asset-search-time");
+    }
+    if ('rtt' in data)
+    {
+        $("#" + server_entry.id_prefix + "_rtt_value").html(data['rtt']['rtt']);
+        $("#" + server_entry.id_prefix + "_rtt_min").html(data['rtt']['rtt_min']);
+        $("#" + server_entry.id_prefix + "_rtt_max").html(data['rtt']['rtt_max']);
+        $("#" + server_entry.id_prefix + "_rtt_avg").html(data['rtt']['rtt_avg']);
+        fieldMarkOld("#" + server_entry.id_prefix + "_rtt", data.rtt.timestamp, rtt_time_old, rtt_time_warn, "asset-rtt-time");
     }
 }
 
