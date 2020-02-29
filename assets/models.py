@@ -85,3 +85,42 @@ class AssetRTT(models.Model):
         indexes = [
             models.Index(fields=['asset', 'timestamp', ]),
         ]
+
+
+class AssetCommand(models.Model):
+    """
+    Command for asset
+    """
+    asset = models.ForeignKey(Asset, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(default=timezone.now)
+    COMMAND_CHOICES = (
+        ('RTL', "Return to Launch"),
+        ('HOLD', "Hold at Current Position"),
+        ('GOTO', "Goto Position"),
+        ('RON', "Continue"),  # Resume own navigation
+        ('DISARM', "Dis-Arm Aircraft"),
+        ('ALT', "Adjust Altitude"),
+        ('TERM', "Terminate Flight"),
+    )
+    command = models.CharField(max_length=6, choices=COMMAND_CHOICES)
+    REQUIRES_POSITION = ('GOTO', )
+    position = models.PointField(geography=True, null=True, blank=True)
+    REQUIRES_ALTITUDE = ('ALT', )
+    altitude = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return "Command {} to {}".format(self.asset, self.get_command_display())
+
+    def get_command_display(self):
+        """
+        Convert the command into the displayable name
+        """
+        for command_choice in self.COMMAND_CHOICES:
+            if command_choice[0] == self.command:
+                return command_choice[1]
+        return self.command
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['asset', 'timestamp', ]),
+        ]

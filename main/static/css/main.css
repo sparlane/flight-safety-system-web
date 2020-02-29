@@ -23,6 +23,11 @@ div.server, div.asset {
 	text-align: left;
 }
 
+div.dialog-map {
+    width: 400px;
+    height: 400px;
+}
+
 div.server-label, div.asset-label {
 	color: blue;
 	text-align: center;

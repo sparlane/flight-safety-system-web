@@ -2,10 +2,11 @@
 Views for Assets
 """
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.gis.geos import Point
 
-from .models import Asset, AssetStatus, AssetSearchProgress, AssetPosition, AssetRTT
+from .models import Asset, AssetStatus, AssetSearchProgress, AssetPosition, AssetRTT, AssetCommand
 
 
 def assets_main(request):
@@ -68,7 +69,7 @@ def asset_status_json(request, asset_id):
             if rtt_max < rtt.rtt:
                 rtt_max = rtt.rtt
             rtt_total += rtt.rtt
-            count+=1
+            count += 1
         if count > 0:
             rtt_avg = rtt_total / count
         data['rtt'] = {
@@ -80,5 +81,51 @@ def asset_status_json(request, asset_id):
         }
     except IndexError:
         pass
+    try:
+        command = AssetCommand.objects.filter(asset=asset).latest('timestamp')
+        data['command'] = {
+            'timestamp': command.timestamp,
+            'command': command.get_command_display(),
+        }
+        if command.position:
+            data['command']['lat'] = command.position.y
+            data['command']['lng'] = command.position.x
+        if command.altitude:
+            data['command']['alt'] = command.altitude
+    except ObjectDoesNotExist:
+        pass
 
     return JsonResponse(data)
+
+
+def asset_command_set(request, asset_id):
+    """
+    Set the command for a given asset
+    """
+    asset = get_object_or_404(Asset, pk=asset_id)
+    if request.method == "POST":
+        point = None
+        altitude = None
+        command = request.POST.get('command')
+        if command in AssetCommand.REQUIRES_POSITION:
+            latitude = request.POST.get('latitude')
+            longitude = request.POST.get('longitude')
+            try:
+                point = Point(float(longitude), float(latitude))
+            except (ValueError, TypeError):
+                return HttpResponseBadRequest('Invalid Lat/Long')
+        if command in AssetCommand.REQUIRES_ALTITUDE:
+            error = False
+            try:
+                altitude = int(request.POST.get('altitude'))
+            except (ValueError, TypeError):
+                error = True
+            if not error:
+                if altitude < 0 or altitude > 1000:
+                    error = True
+            if error:
+                return HttpResponseBadRequest('Invalid Altitude')
+        asset_command = AssetCommand(asset=asset, command=command, position=point, altitude=altitude)
+        asset_command.save()
+        return HttpResponse("Created")
+    return HttpResponseBadRequest("Only POST is supported")
