@@ -1,0 +1,12 @@
+[Unit]
+Description=Flight-Safety-System Web Server
+Requires=postgresql.service
+After=postgresql.service
+
+[Service]
+User=cap
+WorkingDirectory=/home/cap/software/flight-safety-system-web
+ExecStart=/home/cap/software/flight-safety-system-web/start.sh
+
+[Install]
+WantedBy=multi-user.target
