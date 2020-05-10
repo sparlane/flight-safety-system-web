@@ -88,7 +88,7 @@ serverAddIfNew = function(server)
     {
         known_servers.push(server);
         /* Present new server */
-        $("div#servers").append('<div class="server" id="server_' + server.name + '"><div id="server_label_' + server.name + '" class="server-label">' + server.name + '</div><table id="server_status_' + server.name + '" class="server-status"><tr><td>Connecting</td></tr></table></div>');
+        $("div#servers").append('<div class="server" id="server_' + server.name + '"><div id="server_label_' + server.name + '" class="server-label">' + server.name + '</div><table id="server_status_' + server.name + '" class="server-status"><tr><td>Connecting</td></tr></table><div id="server_login_info_' + server.name + '" class="server-login">Unknown</div></div>');
     }
 }
 
@@ -431,6 +431,16 @@ serverUpdateStatus = function(server)
               $("#server_label_" + server.name).removeClass('server-label-connected');
               $("#server_label_" + server.name).addClass('server-label-failure');
           });
+    $.get(server.url + "/current_user/", function(data) {
+        if (data['currentUser'] == null)
+        {
+            $("#server_login_info_" + server.name).html("<a href=\"" + server.url + "/login/\">Login Here</a>");
+        }
+        else
+        {
+            $("#server_login_info_" + server.name).html("Logged in as: " + data.currentUser);
+        }
+    });
 }
 
 serversUpdateKnown = function()

@@ -1,8 +1,9 @@
 """
 Main view functions
 """
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
+from django.contrib.auth import authenticate, login
 
 from config.models import ServerConfig
 from assets.models import Asset
@@ -46,3 +47,31 @@ def asset_list(request):
         assets_list.append({'pk': asset.pk, 'name': asset.name})
 
     return JsonResponse({'assets': assets_list})
+
+
+def current_user(request):
+    """
+    Return the current user, helps determine if the client is logged in
+    """
+    if request.user.is_authenticated:
+        user = request.user.username
+    else:
+        user = None
+    return JsonResponse({'currentUser': user})
+
+
+def login_page(request):
+    """
+    Login a user
+    """
+    if request.method == "POST":
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            # Redirect to a success page.
+            return redirect('/')
+        else:
+            print("Failed to authenticate as {} with {}".format(username, password))
+    return render(request, 'main/login_page.html')
