@@ -32,7 +32,11 @@ class AssetSearchProgress(models.Model):
     search_progress_of = models.IntegerField()
 
     def __str__(self):
-        return "{} performing search {} @ {} of {}".format(self.asset, self.search, self.search_progress, self.search_progress_of)
+        return ("{} performing search {}"
+                " @ {} of {}").format(self.asset,
+                                      self.search,
+                                      self.search_progress,
+                                      self.search_progress_of)
 
     class Meta:
         indexes = [
@@ -50,7 +54,8 @@ class AssetStatus(models.Model):
     bat_used_mah = models.IntegerField()
 
     def __str__(self):
-        return "{} with {}% battery remaining ({}mAh used)".format(self.asset, self.bat_percent, self.bat_used_mah)
+        return ("{} with {}% battery remaining"
+                " ({}mAh used)").format(self.asset, self.bat_percent, self.bat_used_mah)
 
     class Meta:
         indexes = [

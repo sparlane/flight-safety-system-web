@@ -125,7 +125,8 @@ def asset_command_set(request, asset_id):
                     error = True
             if error:
                 return HttpResponseBadRequest('Invalid Altitude')
-        asset_command = AssetCommand(asset=asset, command=command, position=point, altitude=altitude)
+        asset_command = AssetCommand(asset=asset, command=command,
+                                     position=point, altitude=altitude)
         asset_command.save()
         return HttpResponse("Created")
     return HttpResponseBadRequest("Only POST is supported")

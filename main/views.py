@@ -22,7 +22,10 @@ def status_view(request):
     Report the current status
     """
     assets = Asset.objects.all()
-    return HttpResponse('<tr><td class="server-status-label">Known Assets</td><td class="server-status-value">{}</td></tr>'.format(assets.count()))
+    return HttpResponse(('<tr>'
+                         '<td class="server-status-label">Known Assets</td>'
+                         '<td class="server-status-value">{}</td>'
+                         '</tr>').format(assets.count()))
 
 
 def server_list(request):
@@ -32,7 +35,13 @@ def server_list(request):
     servers = ServerConfig.objects.filter(active=True)
     servers_list = []
     for server in servers:
-        servers_list.append({'name': server.name, 'address': server.address, 'client_port': server.client_port, 'url': server.http_address()})
+        server_details = {
+            'name': server.name,
+            'address': server.address,
+            'client_port': server.client_port,
+            'url': server.http_address(),
+        }
+        servers_list.append(server_details)
 
     return JsonResponse({'servers': servers_list})
 
@@ -72,6 +81,5 @@ def login_page(request):
             login(request, user)
             # Redirect to a success page.
             return redirect('/')
-        else:
-            print("Failed to authenticate as {} with {}".format(username, password))
+        print("Failed to authenticate as {} with {}".format(username, password))
     return render(request, 'main/login_page.html')

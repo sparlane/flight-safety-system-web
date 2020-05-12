@@ -30,8 +30,12 @@ class ServerConfig(models.Model):
     name = models.CharField(max_length=25)
     address = models.CharField(max_length=255)
     active = models.BooleanField(default=True)
-    client_port = models.IntegerField(default=20202, validators=[MaxValueValidator(65535), MinValueValidator(1)])
-    config_port = models.IntegerField(default=8090, validators=[MaxValueValidator(65535), MinValueValidator(1)])
+    client_port = models.IntegerField(default=20202,
+                                      validators=[MaxValueValidator(65535),
+                                                  MinValueValidator(1)])
+    config_port = models.IntegerField(default=8090,
+                                      validators=[MaxValueValidator(65535),
+                                                  MinValueValidator(1)])
     https = models.BooleanField(default=False)
 
     def http_address(self):
@@ -56,7 +60,9 @@ class SMMConfig(models.Model):
     """
     name = models.CharField(max_length=20)
     address = models.CharField(max_length=255)
-    port = models.IntegerField(default=443, validators=[MaxValueValidator(65535), MinValueValidator(1)])
+    port = models.IntegerField(default=443,
+                               validators=[MaxValueValidator(65535),
+                                           MinValueValidator(1)])
     https = models.BooleanField(default=True)
 
     def http_address(self):
