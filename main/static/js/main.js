@@ -49,7 +49,7 @@ function dm_to_deg(dm_str)
     return degs;
 }
 
-dialogCreate = function(title, text, buttons, classes)
+function dialogCreate(title, text, buttons, classes)
 {
     $("#dialog-header").html(title);
     $("#dialog-body").html(text);
@@ -67,14 +67,14 @@ dialogCreate = function(title, text, buttons, classes)
     $("#dialog-modal").modal('show');
 }
 
-dialogHide = function()
+function dialogHide()
 {
     $('#dialog-modal').on('shown.bs.modal', () => {});
     $("#dialog-modal").modal('hide');
     $("#dialog-modal").removeClass().addClass('modal fade');
 }
 
-serverFind = function(name)
+function serverFind(name)
 {
     for (var ks in known_servers)
     {
@@ -86,7 +86,7 @@ serverFind = function(name)
     return null;
 }
 
-serverAddIfNew = function(server)
+function serverAddIfNew(server)
 {
     var existing = serverFind(server.name);
     if (existing === null)
@@ -97,7 +97,7 @@ serverAddIfNew = function(server)
     }
 }
 
-assetFind = function(name)
+function assetFind(name)
 {
     for (var ka in known_assets)
     {
@@ -109,12 +109,12 @@ assetFind = function(name)
     return null;
 }
 
-assetServerGetURL = function(server_entry)
+function assetServerGetURL(server_entry)
 {
     return server_entry.server.url + "/assets/" + server_entry.pk + "/";
 }
 
-assetSendCommand = function(asset, data)
+function assetSendCommand(asset, data)
 {
     dialogHide();
     for (var s in asset.servers)
@@ -124,7 +124,7 @@ assetSendCommand = function(asset, data)
     }
 }
 
-assetRTL = function(asset_name)
+function assetRTL(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
@@ -134,7 +134,7 @@ assetRTL = function(asset_name)
     }
 }
 
-assetHold = function(asset_name)
+function assetHold(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
@@ -144,7 +144,7 @@ assetHold = function(asset_name)
     }
 }
 
-assetContinue = function(asset_name)
+function assetContinue(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
@@ -154,7 +154,7 @@ assetContinue = function(asset_name)
     }
 }
 
-assetGoto = function(asset_name)
+function assetGoto(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
@@ -168,7 +168,7 @@ assetGoto = function(asset_name)
     }
 }
 
-assetGotoDialog = function(asset_name)
+function assetGotoDialog(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
@@ -204,7 +204,7 @@ assetGotoDialog = function(asset_name)
     }
 }
 
-assetAltitude = function(asset_name)
+function assetAltitude(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
@@ -214,13 +214,13 @@ assetAltitude = function(asset_name)
     }
 }
 
-assetAltitudeDialog = function(asset_name)
+function assetAltitudeDialog(asset_name)
 {
     dialogCreate('Adjust ' + asset_name + ' Altitude', 'New altitude: <input type="text" size="3" maxlength="3" min="0" max="999" value="100" id="asset-altitude"></input>ft', [{ btn_class: 'btn-light', label: 'Set Altitude', onclick: 'assetAltitude(\'' + asset_name + '\')'}]);
 }
 
 
-assetDisArm = function(asset_name)
+function assetDisArm(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
@@ -230,12 +230,12 @@ assetDisArm = function(asset_name)
     }
 }
 
-assetDisArmDialog = function(asset_name)
+function assetDisArmDialog(asset_name)
 {
     dialogCreate('Disarm ' + asset_name, 'Warning this will probably result in the aircraft crashing use only when all other options are unsafe', [{ btn_class: 'btn-danger', label: 'DisArm', onclick: 'assetDisArm(\'' + asset_name + '\')'}]);
 }
 
-assetTerminate = function(asset_name)
+function assetTerminate(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
@@ -245,12 +245,12 @@ assetTerminate = function(asset_name)
     }
 }
 
-assetTerminateDialog = function(asset_name)
+function assetTerminateDialog(asset_name)
 {
     dialogCreate('Terminate ' + asset_name, 'Warning this will cause the aircraft to immediately terminate flight and most certainly destroy it, be sure the area directly under the aircraft is free of any people and property. Use RTL or Hold instead.', [{ btn_class: 'btn-danger', label: 'Terminate Flight', onclick: 'assetTerminate(\'' + asset_name + '\')'}, { btn_class: 'btn-light', label: 'RTL', onclick: 'assetRTL(\'' + asset_name + '\')' }, { btn_class: 'btn-light', label: 'Hold', onclick: 'assetHold(\'' + asset_name + '\')' }]);
 }
 
-assetAddIfNew = function(asset)
+function assetAddIfNew(asset)
 {
     var existing = assetFind(asset.name);
     if (existing === null)
@@ -287,7 +287,7 @@ assetAddIfNew = function(asset)
     }
 }
 
-assetServerAddIfNew = function(name, server, server_asset_id)
+function assetServerAddIfNew(name, server, server_asset_id)
 {
     var asset = assetFind(name);
     if (asset !== null)
@@ -319,7 +319,7 @@ assetServerAddIfNew = function(name, server, server_asset_id)
     }
 }
 
-fieldMarkOld = function(field, timestamp, old, warn, prefix)
+function fieldMarkOld(field, timestamp, old, warn, prefix)
 {
     var dbTime = new Date(timestamp);
     var curTime = new Date();
@@ -339,7 +339,7 @@ fieldMarkOld = function(field, timestamp, old, warn, prefix)
     }
 }
 
-assetServerPopulateStatus = function(asset, server_entry, data)
+function assetServerPopulateStatus(asset, server_entry, data)
 {
     if ('position' in data)
     {
@@ -391,7 +391,7 @@ assetServerPopulateStatus = function(asset, server_entry, data)
     }
 }
 
-assetServerUpdateStatus = function(name, server)
+function assetServerUpdateStatus(name, server)
 {
     var asset = assetFind(name);
     if (asset === null)
@@ -408,7 +408,7 @@ assetServerUpdateStatus = function(name, server)
               });
 }
 
-serverUpdateAssets = function(server)
+function serverUpdateAssets(server)
 {
     $.getJSON(server.url + "/assets.json",
     function(data) {
@@ -425,7 +425,7 @@ serverUpdateAssets = function(server)
       }).fail(function() {});
 }
 
-serverUpdateStatus = function(server)
+function serverUpdateStatus(server)
 {
     $.get(server.url + "/status/", function(data) {
           $("#server_status_" + server.name).html(data);
@@ -449,7 +449,7 @@ serverUpdateStatus = function(server)
     });
 }
 
-serversUpdateKnown = function()
+function serversUpdateKnown()
 {
     // Load the known servers
     $.getJSON("servers.json", function (data) {
@@ -465,7 +465,7 @@ serversUpdateKnown = function()
     });
 }
 
-setupPage = function()
+function setupPage()
 {
     $.ajaxSetup({timeout: 2500 });
     serversUpdateKnown();
