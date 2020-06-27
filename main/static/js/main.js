@@ -49,15 +49,18 @@ function dm_to_deg(dm_str)
     return degs;
 }
 
-dialogCreate = function(title, text, buttons)
+dialogCreate = function(title, text, buttons, classes)
 {
     $("#dialog-header").html(title);
     $("#dialog-body").html(text);
+    if(classes){
+        $("#dialog-modal").addClass(classes);
+    }
     button_html = '';
     for (var b in buttons)
     {
         var btn = buttons[b];
-        button_html += '<button class="btn ' + btn.btn_class + '" onclick="' + btn.onclick + '">' + btn.label + '</button>';
+        button_html += `<button class="btn ${btn.btn_class}" onclick="${btn.onclick}">${btn.label}</button>`;
     }
     button_html += '<button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>';
     $("#dialog-buttons").html(button_html);
@@ -66,7 +69,9 @@ dialogCreate = function(title, text, buttons)
 
 dialogHide = function()
 {
+    $('#dialog-modal').on('shown.bs.modal', () => {});
     $("#dialog-modal").modal('hide');
+    $("#dialog-modal").removeClass().addClass('modal fade');
 }
 
 serverFind = function(name)
@@ -178,12 +183,12 @@ assetGotoDialog = function(asset_name)
                 position = server_entry.position;
             }
         }
-        html = '<div>';
-        html += '<input type="text" id="asset-goto-latitude" value="' + deg_to_dm(position.lat, true) + '"></input>';
-        html += '<input type="text" id="asset-goto-longitude" value="' + deg_to_dm(position.lng, false) + '"></input>';
-        html += '<div id="map" class="dialog-map"></div>';
-        html += '</div>';
-        dialogCreate('Send ' + asset_name + ' to', html, [{ btn_class: 'btn-light', label: 'Goto', onclick: 'assetGoto(\'' + asset_name + '\')'}]);
+        let html =`<div>
+                    <input type="text" id="asset-goto-latitude" value="${deg_to_dm(position.lat, true)}"></input>
+                    <input type="text" id="asset-goto-longitude" value="${deg_to_dm(position.lng, false)}"></input>
+                    <div id="map" class="dialog-map"/>
+                    </div>`;
+        dialogCreate(`Send ${asset_name} to`, html, [{ btn_class: 'btn-light', label: 'Goto', onclick: `assetGoto('${asset_name}')`}], 'map-modal');
         var map = L.map('map').setView([position.lat, position.lng], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -195,6 +200,7 @@ assetGotoDialog = function(asset_name)
              $("#asset-goto-latitude").val(deg_to_dm(markerCoords.lat, true));
              $("#asset-goto-longitude").val(deg_to_dm(markerCoords.lng, false));
              });
+        $('#dialog-modal.map-modal').on('shown.bs.modal', () => {map.invalidateSize();});
     }
 }
 
