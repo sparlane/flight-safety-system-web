@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.gis.geos import Point
+from django.contrib.auth.decorators import login_required
 
 from .models import Asset, AssetStatus, AssetSearchProgress, AssetPosition, AssetRTT, AssetCommand
 
@@ -98,6 +99,7 @@ def asset_status_json(request, asset_id):
     return JsonResponse(data)
 
 
+@login_required
 def asset_command_set(request, asset_id):
     """
     Set the command for a given asset
