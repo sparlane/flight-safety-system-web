@@ -171,7 +171,7 @@ class Asset {
         dialogHide();
         for (var s in this.servers)
         {
-            var url = this.servers[s].getURL() + "command/set/";
+            var url = this.servers[s].getURL('command/set/');
             $.post(url, data);
         }
     }
@@ -499,7 +499,7 @@ function serverUpdateStatus(server)
     $.get(server.getURL("/current_user/"), function(data) {
         if (data['currentUser'] == null)
         {
-            $("#server_login_info_" + server.name).html(`<a href="${server.getURL()}/login/">Login Here</a>`);
+            $("#server_login_info_" + server.name).html(`<a href="${server.getURL('/login/')}">Login Here</a>`);
         }
         else
         {
