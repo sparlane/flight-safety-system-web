@@ -74,6 +74,13 @@ function dialogHide()
     $("#dialog-modal").removeClass().addClass('modal fade');
 }
 
+class Server {
+    constructor(server_name) {
+        this.name = server_name;
+    }
+
+}
+
 function serverFind(name)
 {
     for (var ks in known_servers)
@@ -97,6 +104,110 @@ function serverAddIfNew(server)
     }
 }
 
+class AssetServer {
+    constructor(server, asset, pk)
+    {
+        this.server = server;
+        this.asset = asset;
+        this.pk = pk;
+    }
+    getURL()
+    {
+        return this.server.url + "/assets/" + this.pk + "/";
+    }
+}
+
+class Asset {
+    constructor(asset_name)
+    {
+        this.name = asset_name;
+        this.servers = [];
+    }
+    serverFind(name)
+    {
+        for (var s in asset.servers)
+        {
+            if (this.servers[s].server.name === name)
+            {
+                return this.servers[s];
+            }
+        }
+        return null;
+    }
+    serverAdd(server, pk)
+    {
+        let server_entry = this.serverFind(server.name);
+        if (server_entry === null)
+        {
+            let new_asset_server = new AssetServer(server, this, pk);
+            this.servers.push(new_asset_server);
+            return new_asset_server;
+        }
+        return server_entry;
+    }
+    sendCommand(data)
+    {
+        dialogHide();
+        for (var s in this.servers)
+        {
+            var url = this.servers[s].getURL() + "command/set/";
+            $.post(url, data);
+        }
+    }
+    RTL()
+    {
+        let data = { command: 'RTL' };
+        this.sendCommand(data);
+    }
+    Hold()
+    {
+        let data = { command: 'HOLD' };
+        this.sendCommand(data);
+    }
+    Continue()
+    {
+        let data = { command: 'RON' };
+        this.sendCommand(data);
+    }
+    Goto(lat, lng)
+    {
+        let data = {
+            command: 'GOTO',
+            latitude: lat,
+            longitude: lng,
+        };
+        this.sendCommand(data);
+    }
+    Altitude(alt)
+    {
+        let data = { command: 'ALT', altitude: alt };
+        this.sendCommand(data);
+    }
+    DisArm()
+    {
+        let data = { command: 'DISARM' };
+        this.sendCommand(data);
+    }
+    Terminate()
+    {
+        let data = { command: 'TERM' };
+        this.sendCommand(data);
+    }
+    positionMostRecent()
+    {
+        var position = null;
+        for (var s in this.servers)
+        {
+            var server_entry = this.servers[s];
+            if (position === null || server_entry.position.timestamp > position.timestamp)
+            {
+                position = server_entry.position;
+            }
+        }
+        return position;
+    }
+}
+
 function assetFind(name)
 {
     for (var ka in known_assets)
@@ -109,86 +220,25 @@ function assetFind(name)
     return null;
 }
 
-function assetServerGetURL(server_entry)
-{
-    return server_entry.server.url + "/assets/" + server_entry.pk + "/";
-}
-
-function assetSendCommand(asset, data)
-{
-    dialogHide();
-    for (var s in asset.servers)
-    {
-        var url = assetServerGetURL(asset.servers[s]) + "command/set/";
-        $.post(url, data);
-    }
-}
-
-function assetRTL(asset_name)
-{
-    asset = assetFind(asset_name);
-    if (asset !== null)
-    {
-        data = { command: 'RTL' };
-        assetSendCommand(asset, data);
-    }
-}
-
-function assetHold(asset_name)
-{
-    asset = assetFind(asset_name);
-    if (asset !== null)
-    {
-        data = { command: 'HOLD' };
-        assetSendCommand(asset, data);
-    }
-}
-
-function assetContinue(asset_name)
-{
-    asset = assetFind(asset_name);
-    if (asset !== null)
-    {
-        data = { command: 'RON' };
-        assetSendCommand(asset, data);
-    }
-}
-
-function assetGoto(asset_name)
-{
-    asset = assetFind(asset_name);
-    if (asset !== null)
-    {
-        data = {
-            command: 'GOTO',
-            latitude: dm_to_deg($("#asset-goto-latitude").val()),
-            longitude: dm_to_deg($("#asset-goto-longitude").val())
-        };
-        assetSendCommand(asset, data);
-    }
-}
-
 function assetGotoDialog(asset_name)
 {
     asset = assetFind(asset_name);
     if (asset !== null)
     {
         // Find the most recent position report
-        var position = null;
-        for (var s in asset.servers)
-        {
-            var server_entry = asset.servers[s];
-            if (position === null || server_entry.position.timestamp > position.timestamp)
-            {
-                position = server_entry.position;
-            }
-        }
+        let position = asset.positionMostRecent();
         let html =`<div>
                     <input type="text" id="asset-goto-latitude" value="${deg_to_dm(position.lat, true)}"></input>
                     <input type="text" id="asset-goto-longitude" value="${deg_to_dm(position.lng, false)}"></input>
                     <div id="map" class="dialog-map"/>
                     </div>`;
-        dialogCreate(`Send ${asset_name} to`, html, [{ btn_class: 'btn-light', label: 'Goto', onclick: `assetGoto('${asset_name}')`}], 'map-modal');
+        dialogCreate(`Send ${asset_name} to`,
+            html,
+            [{
+                btn_class: 'btn-light',
+                label: 'Goto',
+                onclick: `assetFind('${asset_name}').Goto(dm_to_deg($('#asset-goto-latitude').val()), dm_to_deg($('#asset-goto-longitude').val()))`
+            }], 'map-modal');
         var map = L.map('map').setView([position.lat, position.lng], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -204,131 +254,123 @@ function assetGotoDialog(asset_name)
     }
 }
 
-function assetAltitude(asset_name)
-{
-    asset = assetFind(asset_name);
-    if (asset !== null)
-    {
-        data = { command: 'ALT', altitude: $("#asset-altitude").val() };
-        assetSendCommand(asset, data);
-    }
-}
-
 function assetAltitudeDialog(asset_name)
 {
-    dialogCreate('Adjust ' + asset_name + ' Altitude', 'New altitude: <input type="text" size="3" maxlength="3" min="0" max="999" value="100" id="asset-altitude"></input>ft', [{ btn_class: 'btn-light', label: 'Set Altitude', onclick: 'assetAltitude(\'' + asset_name + '\')'}]);
-}
-
-
-function assetDisArm(asset_name)
-{
-    asset = assetFind(asset_name);
-    if (asset !== null)
-    {
-        data = { command: 'DISARM' };
-        assetSendCommand(asset, data);
-    }
+    dialogCreate('Adjust ' + asset_name + ' Altitude',
+        'New altitude: <input type="text" size="3" maxlength="3" min="0" max="999" value="100" id="asset-altitude"></input>ft',
+        [{ btn_class: 'btn-light', label: 'Set Altitude', onclick: `assetFind('${asset_name}').Altitude($("#asset-altitude").val()`}]);
 }
 
 function assetDisArmDialog(asset_name)
 {
-    dialogCreate('Disarm ' + asset_name, 'Warning this will probably result in the aircraft crashing use only when all other options are unsafe', [{ btn_class: 'btn-danger', label: 'DisArm', onclick: 'assetDisArm(\'' + asset_name + '\')'}]);
-}
-
-function assetTerminate(asset_name)
-{
-    asset = assetFind(asset_name);
-    if (asset !== null)
-    {
-        data = { command: 'TERM' };
-        assetSendCommand(asset, data);
-    }
+    dialogCreate('Disarm ' + asset_name,
+        'Warning this will probably result in the aircraft crashing use only when all other options are unsafe',
+        [{ btn_class: 'btn-danger', label: 'DisArm', onclick: `assetFind('${asset_name}').DisArm()`}]);
 }
 
 function assetTerminateDialog(asset_name)
 {
-    dialogCreate('Terminate ' + asset_name, 'Warning this will cause the aircraft to immediately terminate flight and most certainly destroy it, be sure the area directly under the aircraft is free of any people and property. Use RTL or Hold instead.', [{ btn_class: 'btn-danger', label: 'Terminate Flight', onclick: 'assetTerminate(\'' + asset_name + '\')'}, { btn_class: 'btn-light', label: 'RTL', onclick: 'assetRTL(\'' + asset_name + '\')' }, { btn_class: 'btn-light', label: 'Hold', onclick: 'assetHold(\'' + asset_name + '\')' }]);
+    dialogCreate('Terminate ' + asset_name,
+        'Warning this will cause the aircraft to immediately terminate flight and most certainly destroy it, be sure the area directly under the aircraft is free of any people and property. Use RTL or Hold instead.',
+        [{
+            btn_class: 'btn-danger',
+            label: 'Terminate Flight',
+            onclick: `assetFind('${asset_name}').Terminate()`
+        },{
+            btn_class: 'btn-light',
+            label: 'RTL',
+            onclick: `assetFind('${asset_name}').RTL()`
+        }, {
+            btn_class: 'btn-light',
+            label: 'Hold',
+            onclick: `assetFind('${asset_name}').Hold()`
+        }]);
 }
 
-function assetAddIfNew(asset)
+function assetAddIfNew(asset_data)
 {
-    var existing = assetFind(asset.name);
+    var existing = assetFind(asset_data.name);
     if (existing === null)
     {
-        asset.servers = [];
-        asset.serverFind = function(name)
-        {
-            for (var s in asset.servers)
-            {
-                if (asset.servers[s].server.name === name)
-                {
-                    return asset.servers[s];
-                }
-            }
-            return null;
-        }
+        asset = new Asset(asset_data.name);
         known_assets.push(asset);
         
-        html = '<div class="asset" id="asset_' + asset.name + '">';
-        html += '<div class="asset-label" id="asset_label_' + asset.name + '">' + asset.name + '</div>';
-        html += '<div class="asset-buttons btn-group" role="group" id="asset_buttons_' + asset.name + '">';
-        html += '<button class="btn btn-light" onclick="assetRTL(\'' + asset.name + '\')">RTL</button>';
-        html += '<button class="btn btn-light" onclick="assetHold(\'' + asset.name + '\')">Hold</button>';
-        html += '<button class="btn btn-light" onclick="assetAltitudeDialog(\'' + asset.name + '\')">Altitude</button>';
-        html += '<button class="btn btn-light" onclick="assetGotoDialog(\'' + asset.name + '\')">Goto</button>';
-        html += '<button class="btn btn-light" onclick="assetContinue(\'' + asset.name + '\')">Continue</button>';
-        html += '<button class="btn btn-danger" onclick="assetDisArmDialog(\'' + asset.name + '\')">DisArm</button>';
-        html += '<button class="btn btn-danger" onclick="assetTerminateDialog(\'' + asset.name + '\')">Terminate</button>';
-        html += '</div>';
-        html += '<div class="asset-status" id="asset_status_' + asset.name + '"></div>';
-        html += '</div>';
+        let html = `
+            <div class="asset" id="asset_${asset.name}">
+                <div class="asset-label" id="asset_label_${asset.name}">${asset.name}</div>
+                <div class="asset-buttons btn-group" role="group" id="asset_buttons_${asset.name}">
+                    <button class="btn btn-light" onclick="assetFind('${asset.name}').RTL()">RTL</button>
+                    <button class="btn btn-light" onclick="assetFind('${asset.name}').Hold()">Hold</button>
+                    <button class="btn btn-light" onclick="assetAltitudeDialog('${asset.name}')">Altitude</button>
+                    <button class="btn btn-light" onclick="assetGotoDialog('${asset.name}')">Goto</button>
+                    <button class="btn btn-light" onclick="assetFind('${asset.name}').Continue()">Continue</button>
+                    <button class="btn btn-danger" onclick="assetDisArmDialog('${asset.name}')">DisArm</button>
+                    <button class="btn btn-danger" onclick="assetTerminateDialog('${asset.name}')">Terminate</button>
+                </div>
+                <div class="asset-status" id="asset_status_${asset.name}"></div>
+            </div>`;
 
         $("div#assets").append(html);
+        return asset;
     }
+    return existing;
 }
 
-function assetServerAddIfNew(name, server, server_asset_id)
+function UIAssetStatus(asset)
 {
-    var asset = assetFind(name);
-    if (asset !== null)
-    {
-        server_entry = asset.serverFind(server.name);
-        if (server_entry === null)
-        {
-            id_prefix = 'asset_status_' + asset.name + '_server_' + server.name;
-            asset.servers.push({server: server, pk: server_asset_id, id_prefix: id_prefix});
-            html = '<div class="asset-status-server" id="' + id_prefix + '">';
-            html += '<div class="asset-status-server-label">' + server.name + '</div>';
-            html += '<div class="asset-status-command" id="' + id_prefix + '_command"></div>';
-            html += '<table class="asset-rtt-status" id="' + id_prefix + '_rtt">';
-            html += "<tr><td>RTT (ms)</td><td>min</td><td>max</td><td>avg</td></tr>";
-            html += '<tr><td class="asset-rtt" id="' + id_prefix + '_rtt_value"></td><td class="asset-rtt" id="' + id_prefix + '_rtt_min"></td><td class="asset-rtt" id="' + id_prefix + '_rtt_max"></td><td class="asset-rtt" id="' + id_prefix + '_rtt_avg"></td></tr>';
-            html += '</table>';
-            html += '<div class="asset-position" id="' + id_prefix + '_position">Waiting for position ...</div>';
-            html += '<table class="asset-battery-status" id="' + id_prefix + '_battery">';
-            html += '<tr><td>Remaining %</td><td>Used (mAh)</td></tr>';
-            html += '<tr><td id="' + id_prefix + '_battery_remaining">Unknown</td><td id="' + id_prefix + '_battery_used">Unknown</td></tr>';
-            html += '</table>';
-            html += '<table class="asset-search-status" id="' + id_prefix + '_search">';
-            html += '<tr><td>Search</td><td>Completed</td><td>Total</td></tr>';
-            html += '<tr><td id="' + id_prefix + '_search_id">Unknown</td><td id="' + id_prefix + '_search_current">Unknown</td><td id="' + id_prefix + '_search_total">Unknown</td></tr>';
-            html += '</table>';
-            html += '</div>';
-            $("#asset_status_" + asset.name).append(html);
-        }
-    }
+    return $('#asset_status_' + asset.name);
+}
+
+function UIAssetServerIdPrefix(server_entry)
+{
+    return 'asset_status_' + server_entry.asset.name + '_server_' + server_entry.server.name;
+}
+
+function UIAssetServerAdd(server_entry)
+{
+    let id_prefix = UIAssetServerIdPrefix(server_entry);
+    let html = `
+    <div class="asset-status-server" id="${id_prefix}">
+        <div class="asset-status-server-label">${server_entry.server.name}</div>
+        <div class="asset-status-command" id="${id_prefix}_command"></div>
+        <table class="asset-rtt-status" id="${id_prefix}_rtt">
+            <tr><td>RTT (ms)</td><td>min</td><td>max</td><td>avg</td></tr>
+            <tr>
+                <td class="asset-rtt" id="${id_prefix}_rtt_value"></td>
+                <td class="asset-rtt" id="${id_prefix}_rtt_min"></td>
+                <td class="asset-rtt" id="${id_prefix}_rtt_max"></td>
+                <td class="asset-rtt" id="${id_prefix}_rtt_avg"></td>
+            </tr>
+        </table>
+        <div class="asset-position" id="${id_prefix}_position">Waiting for position ...</div>
+        <table class="asset-battery-status" id="${id_prefix}_battery">
+            <tr><td>Remaining %</td><td>Used (mAh)</td></tr>
+            <tr>
+                <td id="${id_prefix}_battery_remaining">Unknown</td>
+                <td id="${id_prefix}_battery_used">Unknown</td>
+            </tr>
+        </table>
+            <table class="asset-search-status" id="${id_prefix}_search">
+                <tr><td>Search</td><td>Completed</td><td>Total</td></tr>
+                <tr>
+                    <td id="${id_prefix}_search_id">Unknown</td>
+                    <td id="${id_prefix}_search_current">Unknown</td>
+                    <td id="${id_prefix}_search_total">Unknown</td>
+                </tr>
+            </table>
+    </div>`;
+    UIAssetStatus(server_entry.asset).append(html);
 }
 
 function fieldMarkOld(field, timestamp, old, warn, prefix)
 {
     var dbTime = new Date(timestamp);
-    var curTime = new Date();
-    var timeDelata = curTime.getTime() - (new Date()).getTime();
-    if (curTime.getTime() - dbTime.getTime() > old)
+    var timeDelta = (new Date()).getTime() - dbTime.getTime();
+    if (timeDelta > old)
     {
         $(field).addClass(prefix + "-old");
     }
-    else if (curTime.getTime() - dbTime.getTime() > warn)
+    else if (timeDelta > warn)
     {
         $(field).addClass(prefix + "-warn");
     }
@@ -339,42 +381,43 @@ function fieldMarkOld(field, timestamp, old, warn, prefix)
     }
 }
 
-function assetServerPopulateStatus(asset, server_entry, data)
+function UIAssetServerPopulateStatus(server_entry, data)
 {
+    let id_prefix = UIAssetServerIdPrefix(server_entry);
     if ('position' in data)
     {
-        $("#" + server_entry.id_prefix + "_position").html(deg_to_dm(data.position.lat, true) + ' ' + deg_to_dm(data.position.lng, false));
-        fieldMarkOld("#" + server_entry.id_prefix + "_position", data.position.timestamp, asset_position_time_old, asset_position_time_warn, "asset-position");
+        $("#" + id_prefix + "_position").html(deg_to_dm(data.position.lat, true) + ' ' + deg_to_dm(data.position.lng, false));
+        fieldMarkOld("#" + id_prefix + "_position", data.position.timestamp, asset_position_time_old, asset_position_time_warn, "asset-position");
         server_entry.position = data['position'];
     }
     if ('status' in data)
     {
-        $("#" + server_entry.id_prefix + "_battery_remaining").html(data['status']['battery_percent']);
-        $("#" + server_entry.id_prefix + "_battery_used").html(data['status']['battery_used']);
+        $("#" + id_prefix + "_battery_remaining").html(data['status']['battery_percent']);
+        $("#" + id_prefix + "_battery_used").html(data['status']['battery_used']);
         if (data['status']['battery_percent'] < battery_critical)
         {
-            $("#" + server_entry.id_prefix + "_battery").addClass("asset-battery-critical");
+            $("#" + id_prefix + "_battery").addClass("asset-battery-critical");
         }
         else if(data['status']['battery_percent'] < battery_warn)
         {
-            $("#" + server_entry.id_prefix + "_battery").addClass("asset-battery-warn");
+            $("#" + id_prefix + "_battery").addClass("asset-battery-warn");
         }
-        fieldMarkOld("#" + server_entry.id_prefix + "_battery", data.status.timestamp, battery_time_old, battery_time_warn, "asset-battery-time");
+        fieldMarkOld("#" + id_prefix + "_battery", data.status.timestamp, battery_time_old, battery_time_warn, "asset-battery-time");
     }
     if ('search' in data)
     {
-        $("#" + server_entry.id_prefix + "_search_id").html(data['search']['id']);
-        $("#" + server_entry.id_prefix + "_search_current").html(data['search']['progress']);
-        $("#" + server_entry.id_prefix + "_search_total").html(data['search']['total']);
-        fieldMarkOld("#" + server_entry.id_prefix + "_search", data.search.timestamp, search_time_old, search_time_warn, "asset-search-time");
+        $("#" + id_prefix + "_search_id").html(data['search']['id']);
+        $("#" + id_prefix + "_search_current").html(data['search']['progress']);
+        $("#" + id_prefix + "_search_total").html(data['search']['total']);
+        fieldMarkOld("#" + id_prefix + "_search", data.search.timestamp, search_time_old, search_time_warn, "asset-search-time");
     }
     if ('rtt' in data)
     {
-        $("#" + server_entry.id_prefix + "_rtt_value").html(data['rtt']['rtt']);
-        $("#" + server_entry.id_prefix + "_rtt_min").html(data['rtt']['rtt_min']);
-        $("#" + server_entry.id_prefix + "_rtt_max").html(data['rtt']['rtt_max']);
-        $("#" + server_entry.id_prefix + "_rtt_avg").html(data['rtt']['rtt_avg']);
-        fieldMarkOld("#" + server_entry.id_prefix + "_rtt", data.rtt.timestamp, rtt_time_old, rtt_time_warn, "asset-rtt-time");
+        $("#" + id_prefix + "_rtt_value").html(data['rtt']['rtt']);
+        $("#" + id_prefix + "_rtt_min").html(data['rtt']['rtt_min']);
+        $("#" + id_prefix + "_rtt_max").html(data['rtt']['rtt_max']);
+        $("#" + id_prefix + "_rtt_avg").html(data['rtt']['rtt_avg']);
+        fieldMarkOld("#" + id_prefix + "_rtt", data.rtt.timestamp, rtt_time_old, rtt_time_warn, "asset-rtt-time");
     }
     if ('command' in data)
     {
@@ -387,24 +430,14 @@ function assetServerPopulateStatus(asset, server_entry, data)
         {
             command_txt += " to " + data['command']['alt'] + "ft";
         }
-        $("#" + server_entry.id_prefix + "_command").html(command_txt);
+        $("#" + id_prefix + "_command").html(command_txt);
     }
 }
 
-function assetServerUpdateStatus(name, server)
+function UIAssetServerUpdateStatus(server_entry)
 {
-    var asset = assetFind(name);
-    if (asset === null)
-    {
-        return;
-    }
-    var server_entry = asset.serverFind(server.name);
-    if (server_entry === null)
-    {
-        return;
-    }
     $.getJSON(server_entry.server.url + "/assets/" + server_entry.pk + "/status.json", function(data){
-              assetServerPopulateStatus(asset, server_entry, data);
+              UIAssetServerPopulateStatus(server_entry, data);
               });
 }
 
@@ -418,9 +451,14 @@ function serverUpdateAssets(server)
         });
         for (var a in assets)
         {
-            assetAddIfNew(assets[a]);
-            assetServerAddIfNew(assets[a].name, server, assets[a].pk);
-            assetServerUpdateStatus(assets[a].name, server, assets[a].pk);
+            asset = assetAddIfNew(assets[a]);
+            let server_entry = asset.serverFind(server.name);
+            if (server_entry === null)
+            {
+                server_entry = asset.serverAdd(server, assets[a].pk);
+                UIAssetServerAdd(server_entry);
+            }
+            UIAssetServerUpdateStatus(server_entry);
           }
       }).fail(function() {});
 }
