@@ -75,8 +75,15 @@ function dialogHide()
 }
 
 class Server {
-    constructor(server_name) {
+    constructor(server_name, address, client_port, url) {
         this.name = server_name;
+        this.address = address;
+        this.client_port = client_port;
+        this.url = url;
+    }
+    getURL(path)
+    {
+        return this.url + path;
     }
 
 }
@@ -93,15 +100,29 @@ function serverFind(name)
     return null;
 }
 
-function serverAddIfNew(server)
+function UIServerNew(server)
+{
+    let html = `
+        <div class="server" id="server_${server.name}">
+            <div id="server_label_${server.name}" class="server-label">${server.name}</div>
+            <table id="server_status_${server.name}" class="server-status">
+                <tr><td>Connecting</td></tr>
+            </table>
+            <div id="server_login_info_${server.name}" class="server-login">Unknown</div>
+        </div>`;
+    $("div#servers").append(html);
+}
+
+function serverAdd(server)
 {
     var existing = serverFind(server.name);
     if (existing === null)
     {
-        known_servers.push(server);
-        /* Present new server */
-        $("div#servers").append('<div class="server" id="server_' + server.name + '"><div id="server_label_' + server.name + '" class="server-label">' + server.name + '</div><table id="server_status_' + server.name + '" class="server-status"><tr><td>Connecting</td></tr></table><div id="server_login_info_' + server.name + '" class="server-login">Unknown</div></div>');
+        let new_server = new Server(server.name, server.address, server.client_port, server.url)
+        known_servers.push(new_server);
+        return new_server;
     }
+    return existing;
 }
 
 class AssetServer {
@@ -111,9 +132,9 @@ class AssetServer {
         this.asset = asset;
         this.pk = pk;
     }
-    getURL()
+    getURL(path)
     {
-        return this.server.url + "/assets/" + this.pk + "/";
+        return this.server.getURL(`/assets/${this.pk}/${path}`);
     }
 }
 
@@ -436,14 +457,14 @@ function UIAssetServerPopulateStatus(server_entry, data)
 
 function UIAssetServerUpdateStatus(server_entry)
 {
-    $.getJSON(server_entry.server.url + "/assets/" + server_entry.pk + "/status.json", function(data){
+    $.getJSON(server_entry.getURL('status.json'), function(data){
               UIAssetServerPopulateStatus(server_entry, data);
               });
 }
 
 function serverUpdateAssets(server)
 {
-    $.getJSON(server.url + "/assets.json",
+    $.getJSON(server.getURL("/assets.json"),
     function(data) {
         var assets = [];
         $.each(data['assets'], function(key, val) {
@@ -465,7 +486,7 @@ function serverUpdateAssets(server)
 
 function serverUpdateStatus(server)
 {
-    $.get(server.url + "/status/", function(data) {
+    $.get(server.getURL('/status/'), function(data) {
           $("#server_status_" + server.name).html(data);
           $("#server_label_" + server.name).removeClass('server-label-failure');
           $("#server_label_" + server.name).addClass('server-label-connected');
@@ -475,14 +496,14 @@ function serverUpdateStatus(server)
               $("#server_label_" + server.name).removeClass('server-label-connected');
               $("#server_label_" + server.name).addClass('server-label-failure');
           });
-    $.get(server.url + "/current_user/", function(data) {
+    $.get(server.getURL("/current_user/"), function(data) {
         if (data['currentUser'] == null)
         {
-            $("#server_login_info_" + server.name).html("<a href=\"" + server.url + "/login/\">Login Here</a>");
+            $("#server_login_info_" + server.name).html(`<a href="${server.getURL()}/login/">Login Here</a>`);
         }
         else
         {
-            $("#server_login_info_" + server.name).html("Logged in as: " + data.currentUser);
+            $("#server_login_info_" + server.name).html(`Logged in as: ${data.currentUser}`);
         }
     });
 }
@@ -495,10 +516,16 @@ function serversUpdateKnown()
               $.each(data['servers'], function(key, val) {
                      servers.push(val);
               });
-              for (var server in servers)
+              for (var s in servers)
               {
-                serverAddIfNew (servers[server]);
-                serverUpdateStatus (servers[server]);
+                var server = serverFind(servers[s].name);
+                if (server === null)
+                {
+                    server = serverAdd (servers[s]);
+                    /* Present new server */
+                    UIServerNew(server);
+                }
+                serverUpdateStatus (server);
               }
     });
 }
