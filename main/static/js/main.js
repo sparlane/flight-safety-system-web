@@ -214,6 +214,11 @@ class Asset {
         let data = { command: 'TERM' };
         this.sendCommand(data);
     }
+    Manual()
+    {
+        let data = { command: 'MAN' };
+        this.sendCommand(data);
+    }
     positionMostRecent()
     {
         var position = null;
@@ -325,6 +330,7 @@ function assetAddIfNew(asset_data)
                     <button class="btn btn-light" onclick="assetAltitudeDialog('${asset.name}')">Altitude</button>
                     <button class="btn btn-light" onclick="assetGotoDialog('${asset.name}')">Goto</button>
                     <button class="btn btn-light" onclick="assetFind('${asset.name}').Continue()">Continue</button>
+                    <button class="btn btn-info" onclick="assetFind('${asset.name}').Manual()">Manual</button>
                     <button class="btn btn-danger" onclick="assetDisArmDialog('${asset.name}')">DisArm</button>
                     <button class="btn btn-danger" onclick="assetTerminateDialog('${asset.name}')">Terminate</button>
                 </div>
@@ -450,6 +456,10 @@ function UIAssetServerPopulateStatus(server_entry, data)
         if (data['command']['command'] == "Adjust Altitude")
         {
             command_txt += " to " + data['command']['alt'] + "ft";
+        }
+        if (data['command']['command'] == "Manual")
+        {
+            command_txt = " <strong>Take Manual Control Now</strong>";
         }
         $("#" + id_prefix + "_command").html(command_txt);
     }

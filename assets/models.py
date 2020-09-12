@@ -106,6 +106,7 @@ class AssetCommand(models.Model):
         ('DISARM', "Dis-Arm Aircraft"),
         ('ALT', "Adjust Altitude"),
         ('TERM', "Terminate Flight"),
+        ('MAN', "Manual"),
     )
     command = models.CharField(max_length=6, choices=COMMAND_CHOICES)
     REQUIRES_POSITION = ('GOTO', )
