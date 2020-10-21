@@ -130,3 +130,20 @@ def asset_command_set(request, asset_id):
         asset_command.save()
         return HttpResponse("Created")
     return HttpResponseBadRequest("Only POST is supported")
+
+
+def asset_add(request):
+    """
+    Add an asset
+    """
+    if request.method == "POST":
+        asset_name = request.POST.get('asset_name')
+        if asset_name is not None:
+            try:
+                asset = Asset.objects.get(name=asset_name)
+                return HttpResponseForbidden("Asset already exists")
+            except:
+                asset = Asset(name=asset_name)
+                asset.save()
+                return HttpResponse("Created")
+    return HttpResponseBadRequest("Only POST is supported")
