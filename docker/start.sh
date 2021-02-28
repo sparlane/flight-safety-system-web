@@ -8,9 +8,9 @@ if [ "$1" == "test" ]
 then
 ./manage.py test
 else
-    if [ ! -z "$SUPERUSER_USER"] && [ -z "$SUPERUSER_PASS" ]
+    if [ ! -z "$DJANGO_SUPERUSER_USERNAME" ] && [ ! -z "$DJANGO_SUPERUSER_PASSWORD" ]
     then
-        ./manage.py createsuperuser --username "$SUPERUSER_USER" --noinput --password "$SUPERUSER_PASS"
+        ./manage.py createsuperuser --noinput
     fi
     ./manage.py runserver 0.0.0.0:8080
 fi
