@@ -10,7 +10,7 @@ pip install -r requirements.txt
 
 mkdir -p dl
 # Fetch jquery
-JQUERY_VERSION=3.4.1
+JQUERY_VERSION=3.5.1
 JQUERY_FILE=jquery-${JQUERY_VERSION}.min.js
 if [ ! -f dl/${JQUERY_FILE} ]
 then
@@ -19,6 +19,17 @@ fi
 mkdir -p main/static/jquery/
 cp dl/${JQUERY_FILE} main/static/jquery/jquery.js
 
+# Fetch Bootstrap
+BOOTSTRAP_VERSION=4.6.0
+BOOTSTRAP_DIR=bootstrap-${BOOTSTRAP_VERSION}-dist
+BOOTSTRAP_FILE=${BOOTSTRAP_DIR}.zip
+if [ ! -f dl/${BOOTSTRAP_FILE} ]
+then
+    curl -L https://github.com/twbs/bootstrap/releases/download/v${BOOTSTRAP_VERSION}/${BOOTSTRAP_FILE} -o dl/${BOOTSTRAP_FILE}
+fi
+mkdir -p main/static/bootstrap/
+(cd dl; unzip ${BOOTSTRAP_FILE})
+cp -dpR dl/${BOOTSTRAP_DIR}/* main/static/bootstrap/
 
 # Create the local settings file from the template
 if [ ! -f fss/local_settings.py ]
