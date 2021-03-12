@@ -5,7 +5,7 @@ it as local_settings.py
 """
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
