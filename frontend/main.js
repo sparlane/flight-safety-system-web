@@ -1,3 +1,14 @@
+import { deg_to_dm, dm_to_deg } from './dgm.js';
+import { Server } from './server.js';
+import { createAsset } from './asset.js';
+import $ from 'jquery';
+import 'bootstrap';
+import 'bootstrap/dist/css/bootstrap.css';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import './fssweb.css';
+import 'leaflet/dist/images/marker-shadow.png';
+
 var known_servers = [];
 var known_assets = [];
 
@@ -16,39 +27,6 @@ const search_time_old = 600 * 1000;
 const rtt_time_warn = 10 * 1000;
 const rtt_time_old = 60 * 1000;
 
-function deg_to_dm(degs, lat)
-{
-    var dir = '';
-    if (degs < 0)
-    {
-        degs = degs * -1;
-        dir = lat ? 'S' : 'W';
-    }
-    else
-    {
-        dir = lat ? 'N' : 'E';
-    }
-    var d = Math.floor(degs);
-    var mins = ((degs-d)*60).toFixed(3);
-
-    return d + ' ' + mins + ' ' + dir;
-}
-
-function dm_to_deg(dm_str)
-{
-    var parts = dm_str.split(' ');
-    var d = parseInt(parts[0]);
-    var mins = parseFloat(parts[1]);
-    var dir = parts[2];
-    var dec = mins / 60;
-    var degs = d + dec;
-    if (dir === 'S' || dir === 'W')
-    {
-        degs = degs * -1;
-    }
-    return degs;
-}
-
 function dialogCreate(title, text, buttons, classes)
 {
     $("#dialog-header").html(title);
@@ -56,11 +34,11 @@ function dialogCreate(title, text, buttons, classes)
     if(classes){
         $("#dialog-modal").addClass(classes);
     }
-    button_html = '';
+    var button_html = '';
     for (var b in buttons)
     {
         var btn = buttons[b];
-        button_html += `<button class="btn ${btn.btn_class}" onclick="${btn.onclick}">${btn.label}</button>`;
+        button_html += `<button class="btn ${btn.btn_class}" id="${btn.btn_id}">${btn.label}</button>`;
     }
     button_html += '<button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>';
     $("#dialog-buttons").html(button_html);
@@ -72,20 +50,6 @@ function dialogHide()
     $('#dialog-modal').on('shown.bs.modal', () => {});
     $("#dialog-modal").modal('hide');
     $("#dialog-modal").removeClass().addClass('modal fade');
-}
-
-class Server {
-    constructor(server_name, address, client_port, url) {
-        this.name = server_name;
-        this.address = address;
-        this.client_port = client_port;
-        this.url = url;
-    }
-    getURL(path)
-    {
-        return this.url + path;
-    }
-
 }
 
 function serverFind(name)
@@ -125,115 +89,6 @@ function serverAdd(server)
     return existing;
 }
 
-class AssetServer {
-    constructor(server, asset, pk)
-    {
-        this.server = server;
-        this.asset = asset;
-        this.pk = pk;
-    }
-    getURL(path)
-    {
-        return this.server.getURL(`/assets/${this.pk}/${path}`);
-    }
-}
-
-class Asset {
-    constructor(asset_name)
-    {
-        this.name = asset_name;
-        this.servers = [];
-    }
-    serverFind(name)
-    {
-        for (var s in asset.servers)
-        {
-            if (this.servers[s].server.name === name)
-            {
-                return this.servers[s];
-            }
-        }
-        return null;
-    }
-    serverAdd(server, pk)
-    {
-        let server_entry = this.serverFind(server.name);
-        if (server_entry === null)
-        {
-            let new_asset_server = new AssetServer(server, this, pk);
-            this.servers.push(new_asset_server);
-            return new_asset_server;
-        }
-        return server_entry;
-    }
-    sendCommand(data)
-    {
-        dialogHide();
-        for (var s in this.servers)
-        {
-            var url = this.servers[s].getURL('command/set/');
-            $.post(url, data);
-        }
-    }
-    RTL()
-    {
-        let data = { command: 'RTL' };
-        this.sendCommand(data);
-    }
-    Hold()
-    {
-        let data = { command: 'HOLD' };
-        this.sendCommand(data);
-    }
-    Continue()
-    {
-        let data = { command: 'RON' };
-        this.sendCommand(data);
-    }
-    Goto(lat, lng)
-    {
-        let data = {
-            command: 'GOTO',
-            latitude: lat,
-            longitude: lng,
-        };
-        this.sendCommand(data);
-    }
-    Altitude(alt)
-    {
-        let data = { command: 'ALT', altitude: alt };
-        this.sendCommand(data);
-    }
-    DisArm()
-    {
-        let data = { command: 'DISARM' };
-        this.sendCommand(data);
-    }
-    Terminate()
-    {
-        let data = { command: 'TERM' };
-        this.sendCommand(data);
-    }
-    Manual()
-    {
-        let data = { command: 'MAN' };
-        this.sendCommand(data);
-    }
-    positionMostRecent()
-    {
-        var position = null;
-        for (var s in this.servers)
-        {
-            var server_entry = this.servers[s];
-            if (position === null || server_entry.position.timestamp > position.timestamp)
-            {
-                position = server_entry.position;
-            }
-        }
-        return position;
-    }
-}
-
 function assetFind(name)
 {
     for (var ka in known_assets)
@@ -246,71 +101,99 @@ function assetFind(name)
     return null;
 }
 
-function assetGotoDialog(asset_name)
+function assetGotoDialog(asset)
 {
-    asset = assetFind(asset_name);
-    if (asset !== null)
+    // Find the most recent position report
+    let position = asset.positionMostRecent();
+    if (position === null)
     {
-        // Find the most recent position report
-        let position = asset.positionMostRecent();
-        let html =`<div>
-                    <input type="text" id="asset-goto-latitude" value="${deg_to_dm(position.lat, true)}"></input>
-                    <input type="text" id="asset-goto-longitude" value="${deg_to_dm(position.lng, false)}"></input>
-                    <div id="map" class="dialog-map"/>
-                    </div>`;
-        dialogCreate(`Send ${asset_name} to`,
-            html,
-            [{
-                btn_class: 'btn-light',
-                label: 'Goto',
-                onclick: `assetFind('${asset_name}').Goto(dm_to_deg($('#asset-goto-latitude').val()), dm_to_deg($('#asset-goto-longitude').val()))`
-            }], 'map-modal');
-        var map = L.map('map').setView([position.lat, position.lng], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-        var m = L.marker([position.lat, position.lng], {draggable: true, autopan: true })
-        m.addTo(map);
-        m.on('dragend', function() {
-             var markerCoords = m.getLatLng();
-             $("#asset-goto-latitude").val(deg_to_dm(markerCoords.lat, true));
-             $("#asset-goto-longitude").val(deg_to_dm(markerCoords.lng, false));
-             });
-        $('#dialog-modal.map-modal').on('shown.bs.modal', () => {map.invalidateSize();});
+        position = {
+            lat: -43.5,
+            lng: 172.5
+        }
     }
+    let html =`<div>
+                <input type="text" id="asset-goto-latitude" value="${deg_to_dm(position.lat, true)}"></input>
+                <input type="text" id="asset-goto-longitude" value="${deg_to_dm(position.lng, false)}"></input>
+                <div id="map" class="dialog-map"/>
+                </div>`;
+    dialogCreate(`Send ${asset.name} to`,
+        html,
+        [{
+            btn_class: 'btn-light',
+            label: 'Goto',
+            btn_id: 'dialog_button_goto',
+        }], 'map-modal');
+    $("#dialog_button_goto").on("click", function() {
+        dialogHide();
+        asset.Goto(dm_to_deg($('#asset-goto-latitude').val()), dm_to_deg($('#asset-goto-longitude').val()))
+    });
+
+    var map = L.map('map').setView([position.lat, position.lng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    var m = L.marker([position.lat, position.lng], {draggable: true, autopan: true });
+    m.addTo(map);
+    m.on('dragend', function() {
+            var markerCoords = m.getLatLng();
+            $("#asset-goto-latitude").val(deg_to_dm(markerCoords.lat, true));
+            $("#asset-goto-longitude").val(deg_to_dm(markerCoords.lng, false));
+            });
+    $('#dialog-modal.map-modal').on('shown.bs.modal', () => {map.invalidateSize();});
 }
 
-function assetAltitudeDialog(asset_name)
+function assetAltitudeDialog(asset)
 {
-    dialogCreate('Adjust ' + asset_name + ' Altitude',
+    dialogCreate('Adjust ' + asset.name + ' Altitude',
         'New altitude: <input type="text" size="3" maxlength="3" min="0" max="999" value="100" id="asset-altitude"></input>ft',
-        [{ btn_class: 'btn-light', label: 'Set Altitude', onclick: `assetFind('${asset_name}').Altitude($("#asset-altitude").val()`}]);
+        [{ btn_class: 'btn-light', label: 'Set Altitude', btn_id: 'dialog_button_setalt'}]);
+    $("#dialog_button_setalt").on("click", function() {
+        dialogHide();
+        asset.Altitude($("#asset-altitude").val());
+    });
 }
 
-function assetDisArmDialog(asset_name)
+function assetDisArmDialog(asset)
 {
-    dialogCreate('Disarm ' + asset_name,
+    dialogCreate('Disarm ' + asset.name,
         'Warning this will probably result in the aircraft crashing use only when all other options are unsafe',
-        [{ btn_class: 'btn-danger', label: 'DisArm', onclick: `assetFind('${asset_name}').DisArm()`}]);
+        [{ btn_class: 'btn-danger', label: 'DisArm', btn_id: 'dialog_button_disarm'}]);
+    $("#dialog_button_disarm").on("click", function() {
+        dialogHide();
+        asset.DisArm();
+    });
 }
 
-function assetTerminateDialog(asset_name)
+function assetTerminateDialog(asset)
 {
-    dialogCreate('Terminate ' + asset_name,
+    dialogCreate('Terminate ' + asset.name,
         'Warning this will cause the aircraft to immediately terminate flight and most certainly destroy it, be sure the area directly under the aircraft is free of any people and property. Use RTL or Hold instead.',
         [{
             btn_class: 'btn-danger',
             label: 'Terminate Flight',
-            onclick: `assetFind('${asset_name}').Terminate()`
+            btn_id: 'dialog_button_terminate'
         },{
             btn_class: 'btn-light',
             label: 'RTL',
-            onclick: `assetFind('${asset_name}').RTL()`
+            btn_id: 'dialog_button_rtl'
         }, {
             btn_class: 'btn-light',
             label: 'Hold',
-            onclick: `assetFind('${asset_name}').Hold()`
+            btn_id: 'dialog_button_hold'
         }]);
+    $("#dialog_button_terminate").on("click", function() {
+        dialogHide();
+        asset.Terminate();
+    });
+    $("#dialog_button_rtl").on("click", function() {
+        dialogHide();
+        asset.RTL();
+    });
+    $("#dialog_button_hold").on("click", function() {
+        dialogHide();
+        asset.Hold();
+    });
 }
 
 function assetAddIfNew(asset_data)
@@ -318,26 +201,34 @@ function assetAddIfNew(asset_data)
     var existing = assetFind(asset_data.name);
     if (existing === null)
     {
-        asset = new Asset(asset_data.name);
+        var asset = createAsset(asset_data.name);
         known_assets.push(asset);
         
         let html = `
             <div class="asset" id="asset_${asset.name}">
                 <div class="asset-label" id="asset_label_${asset.name}">${asset.name}</div>
                 <div class="asset-buttons btn-group" role="group" id="asset_buttons_${asset.name}">
-                    <button class="btn btn-light" onclick="assetFind('${asset.name}').RTL()">RTL</button>
-                    <button class="btn btn-light" onclick="assetFind('${asset.name}').Hold()">Hold</button>
-                    <button class="btn btn-light" onclick="assetAltitudeDialog('${asset.name}')">Altitude</button>
-                    <button class="btn btn-light" onclick="assetGotoDialog('${asset.name}')">Goto</button>
-                    <button class="btn btn-light" onclick="assetFind('${asset.name}').Continue()">Continue</button>
-                    <button class="btn btn-info" onclick="assetFind('${asset.name}').Manual()">Manual</button>
-                    <button class="btn btn-danger" onclick="assetDisArmDialog('${asset.name}')">DisArm</button>
-                    <button class="btn btn-danger" onclick="assetTerminateDialog('${asset.name}')">Terminate</button>
+                    <button class="btn btn-light" id="asset_buttons_${asset.name}_rtl">RTL</button>
+                    <button class="btn btn-light" id="asset_buttons_${asset.name}_hold">Hold</button>
+                    <button class="btn btn-light" id="asset_buttons_${asset.name}_altitude">Altitude</button>
+                    <button class="btn btn-light" id="asset_buttons_${asset.name}_goto">Goto</button>
+                    <button class="btn btn-light" id="asset_buttons_${asset.name}_continue">Continue</button>
+                    <button class="btn btn-info" id="asset_buttons_${asset.name}_manual">Manual</button>
+                    <button class="btn btn-danger" id="asset_buttons_${asset.name}_disarm">DisArm</button>
+                    <button class="btn btn-danger" id="asset_buttons_${asset.name}_terminate">Terminate</button>
                 </div>
                 <div class="asset-status" id="asset_status_${asset.name}"></div>
             </div>`;
 
         $("div#assets").append(html);
+        $("#asset_buttons_" + asset.name + "_rtl").on("click", function() {asset.RTL()});
+        $("#asset_buttons_" + asset.name + "_hold").on("click", function() {asset.Hold()});
+        $("#asset_buttons_" + asset.name + "_altitude").on("click", function() {assetAltitudeDialog(asset)});
+        $("#asset_buttons_" + asset.name + "_goto").on("click", function() {assetGotoDialog(asset)});
+        $("#asset_buttons_" + asset.name + "_continue").on("click", function() {asset.Continue()});
+        $("#asset_buttons_" + asset.name + "_manual").on("click", function() {asset.Manual()});
+        $("#asset_buttons_" + asset.name + "_disarm").on("click", function() {assetDisArmDialog(asset)});
+        $("#asset_buttons_" + asset.name + "_terminate").on("click", function() {assetTerminateDialog(asset)});
         return asset;
     }
     return existing;
@@ -482,7 +373,7 @@ function serverUpdateAssets(server)
         });
         for (var a in assets)
         {
-            asset = assetAddIfNew(assets[a]);
+            var asset = assetAddIfNew(assets[a]);
             let server_entry = asset.serverFind(server.name);
             if (server_entry === null)
             {
@@ -521,7 +412,7 @@ function serverUpdateStatus(server)
 function serversUpdateKnown()
 {
     // Load the known servers
-    $.getJSON("servers.json", function (data) {
+    $.getJSON("../servers.json", function (data) {
               var servers = [];
               $.each(data['servers'], function(key, val) {
                      servers.push(val);
@@ -552,3 +443,5 @@ function setupPage()
     }, 3000);
     setInterval(serversUpdateKnown, 30000);
 }
+
+setupPage();

@@ -6,3 +6,5 @@ __pycache__/
 dl/
 fss/local_settings.py
 fss/secretkey.txt
+node_modules/
+dist/

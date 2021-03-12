@@ -1,10 +1,6 @@
 django
 
-django-bootstrap4
-
 django-cors-headers
-
-django-leaflet
 
 psycopg2-binary
 
