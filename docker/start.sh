@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ./setup.sh
+source venv/bin/activate
 ./manage.py makemigrations
 ./manage.py migrate
 
