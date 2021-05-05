@@ -4,11 +4,13 @@ Main view functions
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import authenticate, login
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from config.models import ServerConfig
 from assets.models import Asset
 
 
+@ensure_csrf_cookie
 def main_view(request):
     """
     The default landing page
