@@ -4,7 +4,8 @@ Views to configure servers and assets.
 from django.shortcuts import render
 
 from assets.models import Asset
-from .models import ServerConfig, SMMConfig, AssetConfig
+
+from .models import AssetConfig, ServerConfig, SMMConfig
 
 
 def config_main(request):

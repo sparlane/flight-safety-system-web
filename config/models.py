@@ -1,8 +1,8 @@
 """
 Database models for configuration
 """
-from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 from assets.models import Asset
 

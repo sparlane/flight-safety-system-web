@@ -1,13 +1,13 @@
 """
 Main view functions
 """
-from django.shortcuts import render, redirect
-from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import authenticate, login
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from config.models import ServerConfig
 from assets.models import Asset
+from config.models import ServerConfig
 
 
 @ensure_csrf_cookie

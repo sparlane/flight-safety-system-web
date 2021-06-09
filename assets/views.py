@@ -1,12 +1,12 @@
 """
 Views for Assets
 """
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.gis.geos import Point
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404, render
 
-from .models import Asset, AssetStatus, AssetSearchProgress, AssetPosition, AssetRTT, AssetCommand
+from .models import Asset, AssetCommand, AssetPosition, AssetRTT, AssetSearchProgress, AssetStatus
 
 
 def assets_main(request):
@@ -142,7 +142,7 @@ def asset_add(request):
             try:
                 asset = Asset.objects.get(name=asset_name)
                 return HttpResponseForbidden("Asset already exists")
-            except:
+            except ObjectDoesNotExist:
                 asset = Asset(name=asset_name)
                 asset.save()
                 return HttpResponse("Created")
