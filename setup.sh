@@ -14,13 +14,13 @@ npm ci && npm run build
 # Create the local settings file from the template
 if [ ! -f fss/local_settings.py ]
 then
-	grep -q docker /proc/self/cgroup
+	grep -q init /proc/1/cmdline
 	RETCODE=$?
 	if [ $RETCODE -eq 0 ]
     then
-		cp docker/local_settings.py fss/local_settings.py
-	else
         cp fss/local_settings.py.template fss/local_settings.py
+	else
+		cp docker/local_settings.py fss/local_settings.py
 	fi
 
     echo ""

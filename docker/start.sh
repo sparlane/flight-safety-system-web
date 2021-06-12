@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ./setup.sh
+cp -dpR static/* main/static/
 source venv/bin/activate
 ./manage.py makemigrations
 ./manage.py migrate
