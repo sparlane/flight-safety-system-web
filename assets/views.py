@@ -43,6 +43,7 @@ def asset_status_json(request, asset_id):
             'timestamp': status.timestamp,
             'battery_percent': status.bat_percent,
             'battery_used': status.bat_used_mah,
+            'battery_voltage': status.bat_volt,
         }
     except ObjectDoesNotExist:
         pass

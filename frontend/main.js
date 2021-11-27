@@ -262,10 +262,15 @@ function UIAssetServerAdd(server_entry)
         </table>
         <div class="asset-position" id="${id_prefix}_position">Waiting for position ...</div>
         <table class="asset-battery-status" id="${id_prefix}_battery">
-            <tr><td>Remaining %</td><td>Used (mAh)</td></tr>
+            <tr>
+                <td>Remaining %</td>
+                <td>Used (mAh)</td>
+                <td>Voltage</td>
+            </tr>
             <tr>
                 <td id="${id_prefix}_battery_remaining">Unknown</td>
                 <td id="${id_prefix}_battery_used">Unknown</td>
+                <td id="${id_prefix}_battery_voltage">Unknown</td>
             </tr>
         </table>
             <table class="asset-search-status" id="${id_prefix}_search">
@@ -312,6 +317,7 @@ function UIAssetServerPopulateStatus(server_entry, data)
     {
         $("#" + id_prefix + "_battery_remaining").html(data['status']['battery_percent']);
         $("#" + id_prefix + "_battery_used").html(data['status']['battery_used']);
+        $("#" + id_prefix + "_battery_voltage").html(data['status']['battery_voltage']);
         if (data['status']['battery_percent'] < battery_critical)
         {
             $("#" + id_prefix + "_battery").addClass("asset-battery-critical");
