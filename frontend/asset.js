@@ -41,6 +41,9 @@ class Asset {
         }
         return server_entry;
     }
+    getServerCount() {
+        return this.servers.length;
+    }
     sendCommand(data)
     {
         for (var s in this.servers)
