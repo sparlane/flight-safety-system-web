@@ -27,4 +27,4 @@ jobs:
       run: docker push ${{ secrets.DOCKER_USER }}/flight-safety-system-web:${{ github.sha }}
 
     - name: Docker Push (latest)
-      run: docker push ${{ secrets.DOCKER_USER }}/flight_safety_system_web:latest
+      run: docker push ${{ secrets.DOCKER_USER }}/flight-safety-system-web:latest
