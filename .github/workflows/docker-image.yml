@@ -21,10 +21,10 @@ jobs:
           docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
 
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USER }}/flight-safety-system-web:${{ github.sha }} --tag ${{ secrets.DOCKER_USER }}/flight-safety-system-web:latest
+      run: docker build . --file Dockerfile --tag ${{ secrets.DOCKER_REPO }}:${{ github.sha }} --tag ${{ secrets.DOCKER_REPO }}:latest
 
     - name: Docker Push (commitid)
-      run: docker push ${{ secrets.DOCKER_USER }}/flight-safety-system-web:${{ github.sha }}
+      run: docker push ${{ secrets.DOCKER_REPO }}:${{ github.sha }}
 
     - name: Docker Push (latest)
-      run: docker push ${{ secrets.DOCKER_USER }}/flight-safety-system-web:latest
+      run: docker push ${{ secrets.DOCKER_REPO }}:latest
